@@ -1,0 +1,108 @@
+package com.atguigu.crm.service;
+
+import java.util.List;
+import java.util.Map;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.atguigu.crm.mappers.ReportMapper;
+import com.atguigu.crm.orm.Page;
+import com.atguigu.crm.orm.PropertyFilter;
+
+@Service
+public class ReportService {
+	
+	@Autowired
+	private ReportMapper reportMapper;
+	
+	//带查询条件分页,客户贡献分析
+	@Transactional(readOnly=true)
+	public Page<Map<String, Object>> getCustomerContributeReportPage(String pageNoStr, Map<String, Object> parameters) {
+		
+		//把map类型先转换为List<PropertyFilter>
+		List<PropertyFilter> filters = PropertyFilter.parseRequestParamsToPropertyFilters(parameters);
+		
+		//把List<PropertyFilter>转化为mybatis可用的map
+		Map<String, Object> mybatisParams = PropertyFilter.parsePropertyFiltersToMybatisParams(filters);
+		
+		//获取带条件查询的总记录数
+		int totalRecordNo = reportMapper.getCustomerContributeReportTotalRecordNo(mybatisParams);
+		
+		//创建page对象,构造器中计算出totalPageNo并纠正pageNo
+		Page<Map<String, Object>> page = new Page<Map<String, Object>>(totalRecordNo, pageNoStr);
+		
+		//获取firstIndex 和 endIndex
+		int firstIndex = (page.getPageNo()-1)*page.getPageSize()+1;
+		int endIndex = firstIndex + page.getPageSize();
+		mybatisParams.put("firstIndex", firstIndex);
+		mybatisParams.put("endIndex", endIndex);
+		
+		//获取pageList,并设置到page类中
+		List<Map<String, Object>> pageList = reportMapper.getCustomerContributeReportPageList(mybatisParams);
+		page.setPageList(pageList);
+		
+		return page;
+	}
+	
+	//带查询条件分页,客户构成分析
+	@Transactional(readOnly=true)
+	public Page<Map<String, Object>> getCustomerConstitutePage(
+			String pageNoStr, Map<String, Object> parameters) {
+		
+		//把map类型先转换为List<PropertyFilter>
+		List<PropertyFilter> filters = PropertyFilter.parseRequestParamsToPropertyFilters(parameters);
+		
+		//把List<PropertyFilter>转化为mybatis可用的map
+		Map<String, Object> mybatisParams = PropertyFilter.parsePropertyFiltersToMybatisParams(filters);
+		
+		//获取带条件查询的总记录数
+		int totalRecordNo = reportMapper.getCustomerConstituteReportTotalRecordNo(mybatisParams);
+		
+		//创建page对象,构造器中计算出totalPageNo并纠正pageNo
+		Page<Map<String, Object>> page = new Page<Map<String, Object>>(totalRecordNo, pageNoStr);
+		
+		//获取firstIndex 和 endIndex
+		int firstIndex = (page.getPageNo()-1)*page.getPageSize()+1;
+		int endIndex = firstIndex + page.getPageSize();
+		mybatisParams.put("firstIndex", firstIndex);
+		mybatisParams.put("endIndex", endIndex);
+		
+		//获取pageList,并设置到page类中
+		List<Map<String, Object>> pageList = reportMapper.getCustomerConstituteReportPageList(mybatisParams);
+		page.setPageList(pageList);
+		
+		return page;
+	}
+	
+/*	//带查询条件分页,客户服务分析
+	@Transactional(readOnly=true)
+	public Page<Map<String, Object>> getCustomerServiceReportPage(
+			String pageNoStr, Map<String, Object> parameters) {
+		
+		//把map类型先转换为List<PropertyFilter>
+		List<PropertyFilter> filters = PropertyFilter.parseRequestParamsToPropertyFilters(parameters);
+		
+		//把List<PropertyFilter>转化为mybatis可用的map
+		Map<String, Object> mybatisParams = PropertyFilter.parsePropertyFiltersToMybatisParams(filters);
+		
+		//获取带条件查询的总记录数
+		int totalRecordNo = reportMapper.getCustomerServiceReportTotalElements(mybatisParams);
+		
+		//创建page对象,构造器中计算出totalPageNo并纠正pageNo
+		Page<Map<String, Object>> page = new Page<Map<String, Object>>(totalRecordNo, pageNoStr);
+		
+		//获取firstIndex 和 endIndex
+		int firstIndex = (page.getPageNo()-1)*page.getPageSize()+1;
+		int endIndex = firstIndex + page.getPageSize();
+		mybatisParams.put("firstIndex", firstIndex);
+		mybatisParams.put("endIndex", endIndex);
+		
+		//获取pageList,并设置到page类中
+		List<Map<String, Object>> pageList = reportMapper.getCustomerServiceReportContent(mybatisParams);
+		page.setPageList(pageList);
+		
+		return page;
+	}*/
+}

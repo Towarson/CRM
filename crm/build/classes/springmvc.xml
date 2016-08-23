@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:mvc="http://www.springframework.org/schema/mvc"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xsi:schemaLocation="http://www.springframework.org/schema/mvc http://www.springframework.org/schema/mvc/spring-mvc-4.0.xsd
+		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.0.xsd">
+	<!--设置扫描的包  -->
+	<context:component-scan base-package="com.atguigu.crm.*" use-default-filters="false">
+		<context:include-filter type="annotation" expression="org.springframework.stereotype.Controller"/>
+		<context:include-filter type="annotation" expression="org.springframework.web.bind.annotation.ControllerAdvice"/>
+	</context:component-scan>
+	
+	<bean class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+		<property name="prefix" value="/WEB-INF/pages/"/>
+		<property name="suffix" value=".jsp"></property>
+	</bean>
+	
+	<mvc:annotation-driven/>
+	<mvc:default-servlet-handler/>
+	
+	<!--通过路径直接访问资源  -->
+	<mvc:view-controller path="/menu" view-name="home/menu"/>
+	<mvc:view-controller path="/welcome" view-name="home/welcome"/>
+	<mvc:view-controller path="/header" view-name="home/header"/>
+	<mvc:view-controller path="/footer" view-name="home/footer"/>
+	<mvc:view-controller path="/index" view-name="home/index"/>
+	<mvc:view-controller path="/success" view-name="home/success"/>
+	<mvc:view-controller path="/unauthorized" view-name="home/unauthorized"/>
+	
+	<!--国际化资源文件  -->
+	<bean id="resourceBundleMessageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
+		<property name="basename" value="i18n"></property>
+	</bean>
+	
+</beans>

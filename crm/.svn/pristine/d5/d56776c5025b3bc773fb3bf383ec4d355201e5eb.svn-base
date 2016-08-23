@@ -1,0 +1,12 @@
+package com.atguigu.crm.mappers;
+
+import java.util.List;
+import java.util.Map;
+
+public interface ReportMapper {
+
+	int getCustomerContributeReportTotalElements(Map<String, Object> mybatisParams);
+
+	List<Map<String, Object>> getCustomerContributeReportContent(Map<String, Object> mybatisParams);
+
+}

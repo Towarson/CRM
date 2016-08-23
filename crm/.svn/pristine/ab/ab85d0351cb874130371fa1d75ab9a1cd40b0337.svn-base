@@ -1,0 +1,83 @@
+package com.atguigu.crm.handlers;
+
+import java.util.List;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import org.springframework.web.util.WebUtils;
+
+import com.atguigu.crm.entity.Customer;
+import com.atguigu.crm.orm.Page;
+import com.atguigu.crm.service.CustomerServices;
+import com.atguigu.crm.utils.CRMUtils;
+
+@RequestMapping("/customer")
+@Controller
+public class CustomerHandler {
+	
+	@Autowired
+	private CustomerServices customerServices;
+	
+	@RequestMapping(value="/{id}",method=RequestMethod.PUT)
+	public String update(Customer customer,RedirectAttributes attributes) {
+		customerServices.update(customer);
+		attributes.addFlashAttribute("message","修改成功!");
+		return "redirect:/customer/list";
+	}
+	
+	@RequestMapping(value="/{id}",method=RequestMethod.GET)
+	public String input(@PathVariable("id") Long id,RedirectAttributes attributes,Map<String,Object> map) {
+		
+		Customer customer = customerServices.getWithDictsAndContacts(id);
+		
+		List<String> regionList = customerServices.getAllRegion();
+		List<String> levelList = customerServices.getAllLevel();
+		List<String> stateList = customerServices.getAllState();
+		List<String> satifyList = customerServices.getAllSatify();
+		List<String> creditList = customerServices.getAllCredit();
+		
+		map.put("customer", customer);
+		map.put("regionList", regionList);
+		map.put("levelList", levelList);
+		map.put("stateList", stateList);
+		map.put("satifyList", satifyList);
+		map.put("creditList", creditList);
+		
+		attributes.addFlashAttribute("message", "修改成功！");
+		return "customer/input";
+	}
+	
+	@RequestMapping(value="/list")
+	public String list(@RequestParam(value="pageNoStr",required=false) String pageNoStr,
+						HttpServletRequest request,
+						Map<String, Object> map) {
+		//从请求request对象中获取参数的map集合
+		Map<String, Object> parameters = WebUtils.getParametersStartingWith(request, "search_");
+		
+		//将map转换为字符串  queryString
+		String queryString = CRMUtils.encodeParameterMapToQueryString(parameters, "search_");
+		
+		//将queryString放置在map域中,用page标签的属性queryString来接收
+		map.put("queryString",queryString);
+		
+		Page<Customer> page = customerServices.getPage(pageNoStr,parameters);
+		List<String> regionList = customerServices.getAllRegion();
+		List<String> levelList = customerServices.getAllLevel();
+		List<String> stateList = customerServices.getAllState();
+		
+		map.put("page", page);
+		map.put("regionList", regionList);
+		map.put("levelList", levelList);
+		map.put("stateList", stateList);
+		
+		return "customer/list";
+	}
+}

@@ -1,0 +1,9 @@
+package com.atguigu.crm.mappers;
+
+import com.atguigu.crm.entity.Contact;
+
+public interface ContactMapper {
+
+	void saveContact(Contact contact);
+	
+}

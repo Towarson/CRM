@@ -1,0 +1,81 @@
+package com.atguigu.crm.service;
+
+import java.util.List;
+import java.util.Map;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.atguigu.crm.entity.Customer;
+import com.atguigu.crm.mappers.CustomerMapper;
+import com.atguigu.crm.orm.Page;
+import com.atguigu.crm.orm.PropertyFilter;
+
+@Service
+public class CustomerServices {
+	
+	@Autowired
+	private CustomerMapper customerMapper;
+	
+	@Transactional(readOnly=true)
+	public <T> Page<Customer> getPage(String pageNoStr,
+			Map<String, Object> parameters) {
+		
+		//把map类型先转换为List<PropertyFilter>
+		List<PropertyFilter> filters = PropertyFilter.parseRequestParamsToPropertyFilters(parameters);
+		
+		//把List<PropertyFilter>转化为mybatis可用的map
+		Map<String, Object> mybatisParams = PropertyFilter.parsePropertyFiltersToMybatisParams(filters);
+		
+		//获取带条件查询的总记录数
+		long totalRecordNo = customerMapper.getTotalRecordNo(mybatisParams);
+		
+		//创建page对象,构造器中计算出totalPageNo并纠正pageNo
+		Page<Customer> page = new Page<Customer>(totalRecordNo, pageNoStr);
+		
+		//获取firstIndex 和 endIndex
+		int firstIndex = (page.getPageNo()-1)*page.getPageSize()+1;
+		int endIndex = firstIndex + page.getPageSize();
+		mybatisParams.put("firstIndex", firstIndex);
+		mybatisParams.put("endIndex", endIndex);
+		
+		//获取pageList,并设置到page类中
+		List<Customer> pageList = customerMapper.getPageList(mybatisParams);
+		page.setPageList(pageList);
+		
+		return page;
+	}
+	@Transactional(readOnly=true)
+	public List<String> getAllLevel() {
+		return customerMapper.getAllLevel();
+	}
+	@Transactional(readOnly=true)
+	public List<String> getAllRegion() {
+		return customerMapper.getAllRegion();
+	}
+	@Transactional(readOnly=true)
+	public List<String> getAllState() {
+		return customerMapper.getAllState();
+	}
+	@Transactional(readOnly=true)
+	public List<String> getAllSatify() {
+		return customerMapper.getAllSatify();
+	}
+	@Transactional(readOnly=true)
+	public List<String> getAllCredit() {
+		return customerMapper.getAllCredit();
+	}
+	@Transactional(readOnly=true)
+	public Customer getWithDictsAndContacts(Long id) {
+		return customerMapper.getWithDictsAndContacts(id);
+	}
+	@Transactional
+	public void update(Customer customer) {
+		customerMapper.update(customer);
+	}
+	@Transactional(readOnly=true)
+	public Customer get(Long id) {
+		return customerMapper.get(id);
+	}
+}

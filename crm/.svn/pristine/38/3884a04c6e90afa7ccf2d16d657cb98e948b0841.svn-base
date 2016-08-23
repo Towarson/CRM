@@ -1,0 +1,45 @@
+package com.atguigu.crm.handlers;
+
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.util.WebUtils;
+
+import com.atguigu.crm.orm.Page;
+import com.atguigu.crm.service.ReportService;
+import com.atguigu.crm.utils.CRMUtils;
+
+@RequestMapping("/report")
+@Controller
+public class ReportHandler {
+	
+	@Autowired
+	private ReportService reportService;
+	
+	//待条件查询
+	@RequestMapping("/contribute/list")
+	public String contribute(@RequestParam(value="pageNoStr",required=false) String pageNoStr,
+			Map<String, Object> map,HttpServletRequest request) {
+		
+		//从请求request对象中获取参数的map集合
+		Map<String, Object> parameters = WebUtils.getParametersStartingWith(request, "search_");
+		
+		//将map转换为字符串  queryString
+		String queryString = CRMUtils.encodeParameterMapToQueryString(parameters, "search_");
+		
+		//将queryString放置在map域中,用page标签的属性queryString来接收
+		map.put("queryString", queryString);
+		
+		Page<Map<String, Object>> page = reportService.getCustomerContributeReportPage(pageNoStr,parameters);
+		
+		map.put("page", page);
+		
+		return "report/contribute";
+	}
+
+}

@@ -1,0 +1,16 @@
+package com.atguigu.crm.mappers;
+
+import java.util.List;
+import java.util.Map;
+
+import com.atguigu.crm.entity.Customer;
+
+public interface CustomerMapper {
+
+	void saveCustomer(Customer customer);
+
+	long getTotalRecordNo(Map<String, Object> mybatisParams);
+
+	List<Customer> getPageList(Map<String, Object> mybatisParams);
+	
+}

@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.atguigu.crm.mappers.RoleMapper">
+	<delete id="delete">
+		delete from roles where id=#{id}
+	</delete>
+	<insert id="save">
+		insert into roles(ID,DESCRIPTION,ENABLED,NAME) 
+		values (crm_seq.nextval,#{description},#{enabled},#{name})
+	</insert>
+	
+	<select id="getPageList" resultType="Role">
+		select *
+		from( 
+			select rownum rn,ID,DESCRIPTION,ENABLED,NAME
+			from roles 
+			order by ID
+		)
+		<![CDATA[
+			where rn >= #{firstIndex} and rn < #{endIndex}
+		]]>
+	</select>
+	<select id="getTotalRecordNo" resultType="long">
+		SELECT count(id)
+		FROM roles
+	</select>
+	<insert id="updateRoleAuthority">
+		insert into role_authority(role_id,authority_id)
+		<foreach open="(" close=")" collection="authorities" item="item" index="index" separator="union">
+		select #{id},#{item.id}
+		from dual
+		</foreach>
+	</insert>
+	<delete id="clearRole">
+		delete from role_authority
+		where role_id=#{id}
+	</delete>
+	<resultMap type="Authority" id="parentAuthoritiesResultMap">
+		<id column="id" property="id"/>
+		<result column="display_name" property="displayName"/>
+		
+		<collection property="subAuthorities" ofType="Authority">
+			<id column="s_id" property="id"/>
+			<result column="s_display_name" property="displayName"/>
+		</collection>
+	</resultMap>
+	<select id="getAllParentAuthorities" resultMap="parentAuthoritiesResultMap">
+		select p.id,p.display_name,s.id as "s_id",s.display_name as "s_display_name"
+		from authorities p 
+		left outer join authorities s
+		on p.id = s.parent_authority_id
+		where p.parent_authority_id is null
+	</select>
+	
+	<resultMap type="Role" id="roleResultMap">
+		<id column="id" property="id"/>
+		<result column="DESCRIPTION" property="description"/>
+		<result column="ENABLED" property="enabled"/>
+		<result column="NAME" property="name"/>
+		
+		<collection property="authorities" ofType="Authority">
+			<id column="a_id" property="id"/>
+		</collection>
+	</resultMap>
+	
+	<select id="get" resultMap="roleResultMap">
+		select r.ID,r.DESCRIPTION,r.ENABLED,r.NAME,a.id as "a_id"
+		from roles r left outer join role_authority ra
+		on r.id=ra.ROLE_ID
+		left outer join authorities a
+		on ra.AUTHORITY_ID = a.id 
+		where r.id=#{id}
+	</select>
+</mapper>

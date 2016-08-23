@@ -1,0 +1,181 @@
+package com.atguigu.crm.handlers;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.support.ResourceBundleMessageSource;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import org.springframework.web.util.WebUtils;
+
+import com.atguigu.crm.entity.Authority;
+import com.atguigu.crm.entity.User;
+import com.atguigu.crm.orm.Navigation;
+import com.atguigu.crm.orm.Page;
+import com.atguigu.crm.service.UserService;
+import com.atguigu.crm.utils.CRMUtils;
+
+
+@Controller
+@RequestMapping("/user")
+public class UserHandler {
+	
+	@Autowired
+	private UserService userService;
+	
+	@Autowired
+	private ResourceBundleMessageSource messageSource;
+	/**
+	 * SpringMVC 在重定向情况下如何在页面得到 key-val
+	 * 1. 在 Handler 方法中加入一个 RedirectAttributes 的类型的参数. 
+	 * 2. 调用 RedirectAttributes 的 addFlashAttribute 方法加入 key-val 对
+	 * 3. 在 Handler 方法中不能直接重定向到一个物理的 JSP 页面. 而是要要通过 SpringMVC 重定向到该页面.
+	 * 1). 在方法中返回: return "redirect:/index";
+	 * 2). SpringMVC 的配置文件: <mvc:view-controller path="/index" view-name="index"/>
+	 * 
+	 * SpringMVC 如何把消息放入到国际化资源文件中.
+	 * 1. 在类路径下加入国际化资源文件
+	 * 2. 在 SpringMVC 的配置文件中配置国际化资源文件
+	 * <bean id="messageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
+	 * 	<!-- 配置国际化资源文件的基名 -->
+	 *  <property name="basename" value="i18n"></property>
+	 * </bean>
+	 * 3. 在 Handler 中注入 ResourceBundleMessageSource 的实例.
+	 * 4. 在 Handler 的方法中调用 ResourceBundleMessageSource 的 getMessage(code, args, locale) 方法来获取资源文件中的
+	 * val. 
+	 */
+	@ResponseBody
+	@RequestMapping("/navigate")
+	public List<Navigation> navigation(HttpSession session) {
+	String contextPath = session.getServletContext().getContextPath();
+		
+		List<Navigation> navigations = new ArrayList<Navigation>();
+		Navigation top = new Navigation(Long.MAX_VALUE, "客户关系管理系统");
+		navigations.add(top);
+		
+		//1. 获取登录用户的信息
+		User user = (User) session.getAttribute("user");
+		Map<Long, Navigation> parentNavigations = new HashMap<Long, Navigation>();
+
+		//2. 遍历登录用户的所有的权限. 注意: 分配给当前登录用户的权限实际上都是子权限. 而没有父权限. 
+		for(Authority authority: user.getRole().getAuthorities()){
+			//3. 构建子权限所对应的 Navigation 对象. 并设置属性.
+			//注意: 不能把子权限对应的 Navigation 对象直接添加到 top 的 children 中. 
+			Navigation subNavigation = new Navigation(authority.getId(), authority.getDisplayName());
+			subNavigation.setUrl(contextPath + authority.getUrl());
+			
+			//4. 获取当前子权限的父权限
+			Authority parentAuthority = authority.getParentAuthority();
+			//5. 获取父权限所对应的 Navigation 对象. 把父权限的 Navigation 对象存储在了一个 Map 中.
+			//key: 父权限的 id,  value: 对应的 Navigation 对象
+			Navigation parentNavigation = parentNavigations.get(parentAuthority.getId());
+			//若目前还没有子权限所对应的父权限所对应的那个 Navigation 对象.
+			if(parentNavigation == null){
+				//利用父权限创建一个新的 Navigation 对象
+				parentNavigation = new Navigation(parentAuthority.getId(), parentAuthority.getDisplayName());
+				parentNavigation.setState("closed");
+				//把父权限对应的  Navigation 对象加入到 top 的 children 中. 
+				top.getChildren().add(parentNavigation);
+				//把父权限对应的 Navigation 加入到 map 中
+				parentNavigations.put(parentAuthority.getId(), parentNavigation);
+			}
+			//6. 把子权限对应的 Navigation 加入到父权限的 children 中. 
+			parentNavigation.getChildren().add(subNavigation);
+		}
+		
+		return navigations;
+	}
+	
+	
+	@RequestMapping(value="/{id}",method=RequestMethod.PUT)
+	public String update(User user,RedirectAttributes attributes) {
+		userService.update(user);
+		attributes.addFlashAttribute("message","修改成功!");
+		return "redirect:/user/list";
+	}
+	
+	@RequestMapping(value="/{id}",method=RequestMethod.GET)
+	public String input(@PathVariable("id") Long id,Map<String,Object> map) {
+		
+		map.put("user", userService.get(id));
+		
+		return "user/input";
+	}
+	
+	@RequestMapping(value="/{id}",method=RequestMethod.DELETE)
+	public String delete(@PathVariable("id") Long id,RedirectAttributes attributes) {
+		userService.delete(id);
+		attributes.addFlashAttribute("message","删除成功!");
+		return "redirect:/user/list";
+	}
+	@RequestMapping(value="/",method=RequestMethod.POST)
+	public String save(User user,RedirectAttributes attributes) {
+		userService.save(user);
+		attributes.addFlashAttribute("message", "保存成功！");
+		return "redirect:/user/list";
+	}
+	
+	@RequestMapping(value="/",method=RequestMethod.GET)
+	public String input(Map<String,Object> map) {
+		User user = new User();
+		map.put("user", user);
+		return "user/input";
+	}
+	@RequestMapping(value="/list")
+	public String list(@RequestParam(value="pageNoStr",required=false) String pageNoStr,
+			Map<String, Object> map,
+			HttpServletRequest request) {
+		
+		//从请求request对象中获取参数的map集合
+		Map<String, Object> parameters = WebUtils.getParametersStartingWith(request, "search_");
+		
+		//将map转换为字符串
+		String queryString = CRMUtils.encodeParameterMapToQueryString(parameters, "search_");
+		
+		//将queryString放置在map域中,用page标签的属性queryString来接受
+		map.put("queryString", queryString);
+		
+		Page<User> page = userService.getPage(pageNoStr,parameters);
+		
+		map.put("page", page);
+		
+		return "user/list";
+	}
+	@RequestMapping(value="/login",method=RequestMethod.POST)
+	public String login(@RequestParam(value="username",required=false) String userName,
+						@RequestParam(value="password",required=false) String password,
+						HttpSession session,
+						RedirectAttributes attributes,
+						Locale locale) {
+		
+		User user= userService.login(userName,password);
+		
+		if(user == null) {
+			
+			String code = "error.user.login";
+			String[] args = null;
+			
+			String message = messageSource.getMessage(code, args, locale);
+			
+			attributes.addFlashAttribute("message", message);
+			
+			return "redirect:/index";
+		}
+		
+		session.setAttribute("user", user);
+		
+		return "redirect:/success";
+	}
+}

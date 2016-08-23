@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.atguigu.crm.mappers.OrderMapper">
+
+	<select id="getTotalRecordNo" resultType="int">
+		select count(o.id) from orders o left outer join customers s
+		on o.CUSTOMER_ID=s.id
+		where o.CUSTOMER_ID=#{id}
+	</select>
+	<select id="getPageList" resultType="Order">
+		select *
+		from(
+			select rownum rn,o.id,o.ADDRESS,o.ORDER_DATE AS "date",o.NO,o.STATUS,s.id as "customer.id"
+			from orders o left outer join customers s on o.CUSTOMER_ID=s.id
+			where CUSTOMER_ID=#{id}
+			order by o.id
+			)
+		<![CDATA[
+			where rn >= #{firstIndex} and rn < #{endIndex}
+		]]>
+	</select>
+	
+	<resultMap type="Order" id="orderResultMap">
+		<id column="id" property="id"/>
+		<result column="ADDRESS" property="address"/>
+		<result column="ORDER_DATE" property="date"/>
+		<result column="NO" property="no"/>
+		<result column="STATUS" property="status"/>
+		<collection column="ORDER_ID" property="items" ofType="OrderItem">
+			<id column="iId" property="id"/>
+			<result column="items.count" property="count"/>
+			<result column="items.money" property="money"/>
+			<association column="PRODUCT_ID" property="product" javaType="Product">
+				<id column="pId" property="id"/>
+				<result column="items.product.name" property="name"/>
+				<result column="items.unit" property="unit"/>
+			</association>
+		</collection>
+	</resultMap>
+	<select id="getWithOrderItem" resultMap="orderResultMap">
+		select o.id,o.ADDRESS,o.ORDER_DATE,o.NO,o.STATUS,p.name AS "items.product.name",
+		i.ITEM_COUNT AS "items.count",p.unit AS "items.unit",i.money AS "items.money",i.id as iId, p.id as pId
+		from orders o left outer join order_items i on o.id=i.ORDER_ID
+		left outer join products p on i.PRODUCT_ID=p.id
+		where o.id=#{id}
+		order by o.id
+	</select>
+</mapper>

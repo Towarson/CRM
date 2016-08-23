@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.atguigu.crm.mappers.CustomerActivityMapper">
+
+	<select id="getTotalRecordNo" resultType="int">
+		select count(c.id) from customer_activities c left outer join customers s
+		on c.CUSTOMER_ID=s.id
+		where c.CUSTOMER_ID=#{id}
+	</select>
+	<select id="getPageList" resultType="CustomerActivity">
+		select *
+		from(
+			select rownum rn,id,ACTIVITY_DATE  AS "date" ,DESCRIPTION,PLACE,TITLE,CUSTOMER_ID 
+			from customer_activities where CUSTOMER_ID=#{id}
+			order by id
+			)
+		<![CDATA[
+			where rn >= #{firstIndex} and rn < #{endIndex}
+		]]>
+	</select>
+	<delete id="delete">
+		delete from customer_activities where id=#{id}
+	</delete>
+	<insert id="save">
+		insert into customer_activities(id,ACTIVITY_DATE,DESCRIPTION,PLACE,TITLE,CUSTOMER_ID) 
+		values(crm_seq.nextval,#{date},#{description},#{place},#{title},#{customer.id})
+	</insert>
+	<update id="update">
+		update customer_activities set ACTIVITY_DATE=#{date},
+		DESCRIPTION=#{description},PLACE=#{place},TITLE=#{title}
+		where id=#{id}
+	</update>
+	<select id="get" resultType="CustomerActivity">
+		select id,ACTIVITY_DATE AS "date",DESCRIPTION,PLACE,TITLE,CUSTOMER_ID
+		from customer_activities where id=#{id}
+	</select>
+</mapper>

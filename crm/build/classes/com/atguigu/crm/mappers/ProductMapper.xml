@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.atguigu.crm.mappers.ProductMapper">
+	<select id="getTotalRecordNoForCondition" resultType="long">
+		SELECT count(id) FROM products
+		<include refid="queryCondition"/>
+	</select>
+	
+	<sql id="queryCondition">
+			where 1=1
+		<if test="name != null">
+			and name like #{name}
+		</if>
+		<if test="type != null">
+			and type like #{type}
+		</if>
+		<if test="batch != null">
+			and batch like #{batch}
+		</if>
+	</sql>
+	
+	<select id="getAll" resultType="Product">
+		select ID,BATCH,MEMO,NAME,PRICE,TYPE,UNIT from products
+	</select>
+	<update id="update">
+		update products set BATCH=#{batch},MEMO=#{memo},NAME=#{name},PRICE=#{price},TYPE=#{type},UNIT=#{unit}
+		where id=#{id}
+	</update>
+	
+	<select id="get" resultType="Product">
+		select ID,BATCH,MEMO,NAME,PRICE,TYPE,UNIT
+		from products where id = #{id}
+	</select>
+
+	<delete id="delete">
+		delete from products where id=#{id}
+	</delete>
+
+	<!-- 保存产品 -->
+	<insert id="save">
+		insert into products (ID,BATCH,MEMO,NAME,PRICE,TYPE,UNIT) 
+		values (crm_seq.nextval,#{batch},#{memo},#{name},#{price},#{type},#{unit})
+	</insert>
+
+	<!--获取pageList  -->
+	<select id="getPageList" resultType="Product">
+		select *
+		from(
+			select rownum rn,ID,BATCH,MEMO,NAME,PRICE,TYPE,UNIT
+			from products
+			<include refid="queryCondition"/>
+			order by id
+		)
+		<![CDATA[
+			where rn >= #{firstIndex} and rn < #{endIndex}
+		]]>
+	</select>
+	
+	
+	<!--获取总记录数  -->
+	<select id="getTotalRecordNo" resultType="long">
+		SELECT count(id)
+		FROM products
+	</select>
+
+</mapper>

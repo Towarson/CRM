@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.atguigu.crm.mappers.SalesPlanMapper">
+
+	<update id="saveresult">
+		update sales_plan set PLAN_RESULT=#{result}
+	</update>
+	<delete id="delete">
+		delete from sales_plan where id=#{id}
+	</delete>
+	<update id="update">
+		update sales_plan set TODO=#{todo} where id=#{id}
+	</update>
+	
+	<select id="get" resultType="SalesPlan">
+		select id, todo, plan_date, chance_id from sales_plan where id=#{id} 
+		order by id
+	</select>
+	
+	<insert id="save">
+		<selectKey order="BEFORE" keyProperty="id" resultType="long">
+			SELECT crm_seq.nextval
+			FROM dual
+		</selectKey>
+		
+		INSERT INTO sales_plan(id, todo, plan_date, chance_id)
+		VALUES(#{id},#{todo}, #{date}, #{chance.id})
+	</insert>
+</mapper>

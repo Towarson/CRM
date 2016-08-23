@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.atguigu.crm.mappers.DictsMapper">
+
+	<select id="getPageList" resultType="Dict">
+	select *
+	from(
+		select rownum rn,id,editable,item,type,value from dicts
+		<include refid="queryCondition"/>
+		order by id
+		)
+		<![CDATA[
+			where rn >=#{firstIndex} and rn < #{endIndex}
+		]]>
+	</select>
+	
+	<select id="getTotalRecordNo" resultType="int">
+		SELECT count(id) from dicts
+		<include refid="queryCondition"/>
+	</select>
+	
+	<sql id="queryCondition">
+	 	where 1 = 1
+		<if test="type != null">
+			and type like #{type}
+		</if>
+		<if test="item != null">
+			and item like #{item}
+		</if>
+		<if test="value != null">
+			and value like #{value}
+		</if>
+	</sql>
+	<select id="get" resultType="Dict">
+		select ID,EDITABLE,ITEM,TYPE,VALUE from dicts where id=#{id}
+	</select>
+	<delete id="delete">
+		delete from dicts where id=#{id}
+	</delete>
+	<update id="update">
+		update dicts set EDITABLE=#{editable},ITEM=#{item},TYPE=#{type},VALUE=#{value}
+		where id=#{id}
+	</update>
+	<insert id="save">
+		insert into dicts (ID,EDITABLE,ITEM,TYPE,VALUE) values
+		(crm_seq.nextval,#{editable},#{item},#{type},#{value})
+	</insert>
+	
+	<select id="getAllLevel" resultType="String">
+		select item from dicts where type='客户等级'
+	</select>
+	<select id="getAllRegion" resultType="String">
+		select item from dicts where type='地区'
+	</select>
+	<select id="getAllSatify" resultType="String">
+		select item from dicts where type='满意度'
+	</select>
+	<select id="getAllCredit" resultType="String">
+		select item from dicts where type='信用度'
+	</select>
+	<select id="getAllServiceType" resultType="String">
+		select item from dicts where type='服务类型'
+	</select>
+</mapper>

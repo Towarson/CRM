@@ -1,0 +1,84 @@
+package com.atguigu.crm.service;
+
+import java.util.List;
+import java.util.Map;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.atguigu.crm.entity.User;
+import com.atguigu.crm.mappers.UserMapper;
+import com.atguigu.crm.orm.Page;
+import com.atguigu.crm.orm.PropertyFilter;
+
+
+
+@Service
+public class UserService {
+	
+	@Autowired
+	private UserMapper userMapper;
+	
+	@Transactional(readOnly=true)
+	public User login(String userName, String password) {
+		
+		User user = userMapper.getUserByName(userName);
+		
+		if(user != null
+			&& user.getEnabled() == 1
+			&& user.getPassword().equals(password)) {
+			return user;
+		}
+		return null;
+	}
+	
+	@Transactional(readOnly=true)
+	public Page<User> getPage(String pageNoStr, Map<String, Object> parameters) {
+		
+		//把map类型先转换为List<PropertyFilter>
+		List<PropertyFilter> filters = PropertyFilter.parseRequestParamsToPropertyFilters(parameters);
+		
+		//把List<PropertyFilter>转化为mybatis可用的map
+		Map<String, Object> mybatisParams = PropertyFilter.parsePropertyFiltersToMybatisParams(filters);
+				
+		//获取带条件查询的总记录数
+		long totalRecordNo = userMapper.getTotalRecordNoForCondition(mybatisParams);
+		
+		//创建page对象
+		Page<User> page = new Page<User>(totalRecordNo, pageNoStr);
+		
+		//firstIndex和endIndex
+		int firstIndex = (page.getPageNo() - 1)*page.getPageSize() + 1;
+		int endIndex = firstIndex + page.getPageSize();
+		mybatisParams.put("firstIndex", firstIndex);
+		mybatisParams.put("endIndex", endIndex);
+		//获取pageList,并设置到page类中
+		List<User> pageList = userMapper.getPageList(mybatisParams);
+		page.setPageList(pageList);
+		
+		return page;
+	}
+	
+	@Transactional(readOnly=true)
+	public List<User> getAllUser() {
+		return userMapper.getAllUser();
+	}
+	@Transactional
+	public void save(User user) {
+		userMapper.save(user);
+	}
+	@Transactional
+	public void delete(Long id) {
+		userMapper.delete(id);
+	}
+	@Transactional(readOnly=true)
+	public User get(Long id) {
+		return userMapper.get(id);
+	}
+	@Transactional
+	public void update(User user) {
+		userMapper.update(user);
+	}
+
+}

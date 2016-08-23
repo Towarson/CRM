@@ -1,0 +1,274 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8"
+    pageEncoding="UTF-8"%>
+<%@ include file="/commons/common.jsp" %>
+<%@ taglib prefix="atguigu" tagdir="/WEB-INF/tags" %>
+    
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<title>制定计划</title>
+<script type="text/javascript">
+	$(function(){
+		$("#new").click(function(){
+			var date = $("#date").trim().val();
+			var todo = $("#todo").trim().val();
+			var url = "${ctp}/plan/new";
+			var args = {"date":date, "todo":todo,"chance.id": "${chance.id}", "time":new Date()};
+			
+			//如何返回新保存的 SalesPlan 的 id,通过是否有id来判断是否保存成功！
+			//如何为新添加的 button 添加已经写好的 click 响应函数
+			$.post(url, args, function(data){
+				var reg = /^\d+\$/;
+				if(reg.test(data)){
+					var id = parseInt(data);
+					if(id > 0){
+						var $tr = $("<tr id='plan-"+id+"'></tr>");
+						
+						$tr.append("<td class='list_data_text'>" + date + "</td>&nbsp;")
+						   .append("<td class='list_data_ltext'><input id='todo-" + id + "' type='text' size='50' value='" + todo + "'/>"
+								   +"<input type='hidden' value='" + id + "'/>&nbsp;<button class='common_button' id='save-'" + id + "'>保存</button>&nbsp;"
+								   +"<input type='hidden' value='" + id + "'/><button class='common_button' id='delete-'" + id + "'>删除</button></td>");
+						
+						$tr.find("button[id^='save-']").click(function(){
+							update(this);
+							return false;
+						});
+						
+						$tr.find("button[id^='delete-']").click(function(){
+							deletePlan(this);
+							return false;
+						}); 
+						$("#newPlanTable").append($tr);
+						alert("添加成功!");
+					}else{
+						alert("添加失败!");
+					}
+				}
+			});
+			
+			return false;
+		});
+		
+		function deletePlan(button){
+			var id = $(button).prev(":hidden").val();
+			
+			var url = "${ctp}/plan/delete";
+			var args = {"_method":"DELETE", "id":id, "time":new Date()};
+			
+			$.post(url, args, function(data){
+				if(data == "1"){
+					alert("删除成功!");
+					$("#plan-"+id).remove();
+				}else{
+					alert("删除失败！");
+				}
+				
+			});
+			return false;
+		}
+		
+		function update(button){
+			var id = $(button).prev(":hidden").val();
+			var todo = $("#todo-" + id).val();
+			
+			var url = "${ctp}/plan/update";
+			var args = {"_method":"PUT", "id":id, "todo":todo, "time":new Date()};
+			
+			$.post(url, args, function(data){
+				if(data == "1"){
+					alert("修改成功!");
+				}else if(data == "0"){
+				}else{
+					alert("修改失败！");
+				}
+			});
+			return false;
+		}
+		
+		$("button[id^='save-']").click(function(){
+			update(this);
+			return false;
+		});
+		$("button[id^='delete-']").click(function(){
+			deletePlan(this);
+			return false;
+		});
+		
+		$("#execute").click(function(){
+			window.location.href="${ctp}/plan/execute/"+ "${chance.id}";
+		});
+	})
+</script>
+</head>
+
+<body class="main">
+	<span class="page_title">制定计划</span>
+	<div class="button_bar">
+		<button class="common_button" id="execute">
+			执行计划
+		</button>
+		<button class="common_button" onclick="javascript:history.go(-1);">
+			返回
+		</button>
+	</div>
+	<form:form action="${ctp}/plan/make" method="post" modelAttribute="chance">
+		<table class="query_form_table" border="0" cellPadding="3"
+			cellSpacing="0">
+			<tr>
+				<th>
+					编号
+				</th>
+
+				<td>
+					${chance.id }
+				</td>
+				<th>
+					机会来源
+				</th>
+
+				<td>
+					${chance.source }
+				</td>
+			</tr>
+			<tr>
+				<th>
+					客户名称
+				</th>
+				<td>
+					${chance.custName }
+				</td>
+				<th>
+					成功机率（%）
+				</th>
+
+				<td>
+					${chance.rate }
+				</td>
+			</tr>
+			<tr>
+				<th>
+					概要
+				</th>
+				<td colspan="3">
+					${chance.title }
+				</td>
+			</tr>
+			<tr>
+				<th>
+					联系人
+				</th>
+
+				<td>
+					${chance.contact }
+				</td>
+				<th>
+					联系人电话
+				</th>
+
+				<td>
+					${chance.contactTel }
+				</td>
+			</tr>
+			<tr>
+				<th>
+					机会描述
+				</th>
+				<td colspan="3">
+					${chance.description }
+				</td>
+			</tr>
+			<tr>
+				<th>
+					创建人
+				</th>
+				<td>
+					${chance.createBy.name }
+				</td>
+				<th>
+					创建时间
+				</th>
+				<td>
+					<fmt:formatDate value="${chance.createDate }" pattern="yyyy-MM-dd"/>
+				</td>
+			</tr>
+			<tr>
+				<th>
+					指派给
+				</th>
+				<td>
+					${chance.designee.name }
+				</td>
+
+			</tr>
+		</table>
+
+		<br />
+		
+		<table id="newPlanTable" class="data_list_table" border="0" cellPadding="3"
+			cellSpacing="0">
+			<tr>
+				<th width="200px">
+					日期
+				</th>
+				<th>
+					计划项
+				</th>
+			</tr>
+			
+		<c:if test="${empty chance.salesPlans }"></c:if>
+		<c:if test="${!empty chance.salesPlans }">
+		<c:forEach items="${chance.salesPlans }" var="item">
+			<tr id="plan-${item.id }">
+			<td class="list_data_text">
+				<fmt:formatDate value="${item.date }" pattern="yyyy-MM-dd"/>
+				&nbsp;
+			</td>
+			<td class="list_data_ltext">
+				<c:if test="${item.result==null }">
+					<input type="text" size="50" value="${item.todo }" id="todo-${item.id }"/>
+					
+					<input type="hidden" value="${item.id }"/>
+					<button class="common_button" id="save-${item.id }">保存</button>
+					
+					<input type="hidden" value="${item.id }"/>
+					<button class="common_button" id="delete-${item.id }">删除</button>
+				</c:if>
+				<c:if test="${item.result!=null }">
+					<input type="text" size="50" value="${item.todo }" id="todo-${item.id }" disabled="disabled"/>
+					<input type="text" size="50" value="${item.result }" id="result-${item.id }" disabled="disabled"/>
+				</c:if>
+			</td>
+		</tr>
+		</c:forEach>
+		</c:if>
+		</table>
+		<div class="button_bar">
+			<button id="new" class="common_button">
+				新建
+			</button>
+		</div>
+		<input type="hidden" name="chance.id" value="2020" />
+		<table class="query_form_table" border="0" cellPadding="3"
+			cellSpacing="0">
+			<tr>
+				<th>
+					日期
+					<br />
+					(格式: yyyy-mm-dd)
+				</th>
+				<td>
+					<input id="date" type="text" name="date"  />
+					&nbsp;
+				</td>
+				<th>
+					计划项
+				</th>
+				<td>
+					<input id="todo" type="text" name="todo" size="50" />
+					&nbsp;
+				</td>
+			</tr>
+		</table>
+	</form:form>
+</body>
+</html>

@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.atguigu.crm.mappers.CustomerServiceMapper">
+	<update id="feedBack">
+		update customer_services set DEAL_RESULT=#{dealResult},
+		SATISFY=#{satisfy},SERVICE_STATE=#{serviceState}
+		where id=#{id}
+	</update>
+	<update id="deal">
+		update customer_services set SERVICE_DEAL=#{serviceDeal},
+		DEAL_DATE=#{dealDate},SERVICE_STATE=#{serviceState}
+		where id=#{id}
+	</update>
+	<select id="get" resultType="CustomerService">
+		select cs.id,cs.SERVICE_TYPE,cs.SERVICE_TITLE,cs.SERVICE_DEAL,cs.DEAL_DATE,cs.DEAL_RESULT,cs.SATISFY,c.name AS "customer.name",cs.SERVICE_STATE,
+		cs.SERVICE_REQUEST,u.name AS "createdby.name",cs.CREATE_DATE,a.name AS "allotTo.name",cs.ALLOT_DATE
+		from customer_services cs left outer join customers c on cs.CUSTOMER_ID=c.id
+		left outer join users u on cs.CREATED_ID=u.id 
+		left outer join users a on cs.ALLOT_ID=a.id
+		where cs.id=#{id}
+	</select>
+	<delete id="delete">
+		delete from customer_services where id=#{id}
+	</delete>
+	<update id="allot">
+		update customer_services set ALLOT_ID=#{allotTo.id},ALLOT_DATE=#{allotDate},SERVICE_STATE=#{serviceState}
+		where id=#{id}
+	</update>
+	<insert id="save">
+		insert into customer_services
+		(ID,CREATE_DATE,SERVICE_TITLE,SERVICE_STATE,SERVICE_REQUEST,SERVICE_TYPE,CREATED_ID,CUSTOMER_ID) 
+		values(crm_seq.nextval,#{createDate},#{serviceTitle},#{serviceState},#{serviceRequest},#{serviceType},
+		#{createdby.id},#{customer.id})
+	</insert>
+	
+	<select id="getPageList" resultType="CustomerService">
+		select *
+		from(
+			select rownum rn,cs.ID,cs.SERVICE_TYPE,cs.SERVICE_TITLE,c.name AS "customer.name",
+			u.name AS "createdby.name",cs.CREATE_DATE
+			from customer_services cs left outer join customers c on cs.CUSTOMER_ID=c.id
+			left outer join users u on cs.CREATED_ID=u.id 
+			where SERVICE_STATE='新创建'
+			<include refid="queryCondition"/>
+			order by cs.id
+		)
+		<![CDATA[
+			where rn >= #{firstIndex} and rn < #{endIndex}
+		]]>
+	
+	</select>
+	<select id="getTotalRecordNo" resultType="int">
+		select count(cs.id) from customer_services cs 
+		left outer join customers c on cs.CUSTOMER_ID=c.id
+		where SERVICE_STATE='新创建'
+		<include refid="queryCondition"/>
+	</select>
+	<select id="getDealPageList" resultType="CustomerService">
+	select *
+		from(
+			select rownum rn,cs.ID,cs.SERVICE_TYPE,cs.SERVICE_TITLE,c.name AS "customer.name",
+			u.name AS "createdby.name",cs.CREATE_DATE
+			from customer_services cs left outer join customers c on cs.CUSTOMER_ID=c.id
+			left outer join users u on cs.CREATED_ID=u.id 
+			where SERVICE_STATE='已分配' and ALLOT_ID=#{allotTo.id}
+			<include refid="queryCondition"/>
+			order by cs.id
+		)
+		<![CDATA[
+			where rn >= #{firstIndex} and rn < #{endIndex}
+		]]>
+	</select>
+	
+	<select id="getDealTotalRecordNo" resultType="int">
+		select count(cs.id) from customer_services cs 
+		left outer join customers c on cs.CUSTOMER_ID=c.id
+		where SERVICE_STATE='已分配' and ALLOT_ID=#{allotTo.id}
+		<include refid="queryCondition"/>
+	</select>
+	<select id="getFeedBackPageList" resultType="CustomerService">
+	select *
+		from(
+			select rownum rn,cs.ID,cs.SERVICE_TYPE,cs.SERVICE_TITLE,c.name AS "customer.name",
+			u.name AS "createdby.name",cs.CREATE_DATE
+			from customer_services cs left outer join customers c on cs.CUSTOMER_ID=c.id
+			left outer join users u on cs.CREATED_ID=u.id 
+			where SERVICE_STATE='已处理'
+			<include refid="queryCondition"/>
+			order by cs.id
+		)
+		<![CDATA[
+			where rn >= #{firstIndex} and rn < #{endIndex}
+		]]>
+	</select>
+	<select id="getFeedBackTotalRecordNo" resultType="int">
+		select count(cs.id) from customer_services cs 
+		left outer join customers c on cs.CUSTOMER_ID=c.id
+		where SERVICE_STATE='已处理'
+		<include refid="queryCondition"/>
+	</select>
+	<select id="getArchivePageList" resultType="CustomerService">
+	select *
+		from(
+			select rownum rn,cs.ID,cs.SERVICE_TYPE,cs.SERVICE_TITLE,c.name AS "customer.name",
+			u.name AS "createdby.name",cs.CREATE_DATE
+			from customer_services cs left outer join customers c on cs.CUSTOMER_ID=c.id
+			left outer join users u on cs.CREATED_ID=u.id 
+			where SERVICE_STATE='已归档'
+			<include refid="queryCondition"/>
+			order by cs.id
+		)
+		<![CDATA[
+			where rn >= #{firstIndex} and rn < #{endIndex}
+		]]>
+	</select>
+	<select id="getArchiveTotalRecordNo" resultType="int">
+		select count(cs.id) from customer_services cs 
+		left outer join customers c on cs.CUSTOMER_ID=c.id
+		where SERVICE_STATE='已归档'
+		<include refid="queryCondition"/>
+	</select>
+	<sql id="queryCondition">
+		<if test="serviceType != null">
+			and cs.SERVICE_TYPE like #{serviceType}
+		</if>
+		<if test="serviceTitle != null">
+			and cs.SERVICE_TITLE like #{serviceTitle}
+		</if>
+		<if test="customerName != null">
+			and c.name like #{customerName}
+		</if>
+		<if test="minDate != null">
+			<![CDATA[
+			and	cs.CREATE_DATE >= #{minDate}
+			]]>
+		</if>
+		<if test="maxDate != null">
+			<![CDATA[
+			and cs.CREATE_DATE <= #{maxDate}
+			]]>
+		</if>
+	</sql>
+</mapper>

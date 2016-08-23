@@ -1,0 +1,37 @@
+package com.atguigu.crm.mappers;
+
+import java.util.List;
+import java.util.Map;
+
+import org.apache.ibatis.annotations.Param;
+
+import com.atguigu.crm.entity.Contact;
+import com.atguigu.crm.entity.Customer;
+
+public interface CustomerMapper {
+
+	void saveCustomer(Customer customer);
+
+	long getTotalRecordNo(Map<String, Object> mybatisParams);
+
+	List<Customer> getPageList(Map<String, Object> mybatisParams);
+
+	List<String> getAllLevel();
+
+	List<String> getAllRegion();
+
+	List<String> getAllState();
+
+	List<Contact> getMyManager(@Param("id") Long id);
+
+	List<String> getAllSatify();
+
+	List<String> getAllCredit();
+
+	Customer getWithDictsAndContacts(@Param("id") Long id);
+
+	void update(Customer customer);
+
+	Customer get(@Param("id") Long id);
+	
+}

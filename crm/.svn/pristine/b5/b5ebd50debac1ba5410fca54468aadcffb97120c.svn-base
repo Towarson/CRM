@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.atguigu.crm.mappers.ReportMapper">
+
+	<!-- 指定的客户在指定的时间区间内, 和公司发生了多少订单金额. -->
+	<select id="getCustomerContributeReportContent" resultType="java.util.Map">
+	select *
+	from(
+		select rownum rn,t.*
+			from(
+				select c.name as "customerName",sum(oi.item_count * p.price) as "totalMoney"
+				from customers c
+				inner join orders o
+				on c.id = o.customer_id
+				inner join order_items oi
+				on o.id = oi.order_id
+				inner join products p 
+				on p.id = oi.product_id
+				<where>
+					<if test="minDate != null">
+						<![CDATA[
+							o.ORDER_DATE >= #{minDate}
+						]]>
+					</if>
+					<if test="maxDate != null">
+						<![CDATA[
+							and o.ORDER_DATE <= #{maxDate}
+						]]>
+					</if>
+					<if test="customerName != null">
+						and c.name like #{customerName}
+					</if>
+				</where>
+				group by c.name
+			) t
+		)
+		<![CDATA[
+		WHERE rn >= #{firstIndex} AND rn < #{endIndex}
+		]]>
+	</select>
+	
+	<select id="getCustomerContributeReportTotalElements" resultType="int">
+		SELECT count(DISTINCT c.id)
+		FROM customers c
+		INNER JOIN orders o
+		ON c.id = o.customer_id
+		<where>
+			<if test="minDate != null">
+				<![CDATA[
+					o.ORDER_DATE >= #{minDate}
+				]]>
+			</if>
+			<if test="maxDate != null">
+				<![CDATA[
+					and o.ORDER_DATE <= #{maxDate}
+				]]>
+			</if>
+			<if test="customerName != null">
+				and c.name like #{customerName}
+			</if>
+		</where>
+	</select>
+	
+	
+	
+	
+	
+	<select id="getCustomerConstituteReportContent" resultType="java.util.Map">
+	SELECT *
+	from(
+		select rownum rn,t.*
+		from(
+			select ${type} as "type",count(id) as "count"
+			from customers
+			where ${type} is not null
+			GROUP BY ${type}
+			order by ${type}
+			) t
+		)
+		<![CDATA[
+		WHERE rn >= #{firstIndex} AND rn < #{endIndex}
+		]]>
+	</select>
+	
+	<select id="getCustomerConstituteReportTotalElements" resultType="int">
+		select count(count(id))
+	    from customers
+	    where ${type} is not null
+		group by ${type}
+	</select>
+	
+	
+	
+</mapper>

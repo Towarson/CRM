@@ -1,0 +1,176 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.atguigu.crm.mappers.SalesChanceMapper">
+	<!--  
+		1.MySQL 分页用 LIMIT. 而 Oracle 分页用 rownum.
+		rownum 是 Oracle 数据库为数据表生成的一个伪列. 可以用来标记行号.
+		注意: rownum 不支持 > 或 >= . 只支持 < 或 <=
+		所以需要使用子查询。 
+		SELECT *
+		FROM(
+			SELECT rownum rn, id, cust_name, title, contact, contact_tel, create_date
+			FROM sales_chances
+		)
+		WHERE rn > 3 AND rn < 6;
+		
+		2. 对于分页索引需要使用半闭半开区间的方式. 
+		3. 对于 > 或 < 等符号需要放在 CDATA 块中
+		4. 对于标准的列名和 bean 的属性名之间可以进行自动的映射, 不过需要在 mybatis 配置文件中加入如下的配置:
+		例如: last_name 和 lastName. 
+	-->
+	<select id="getTotalRecordNoForDesigneeForCondition" resultType="long">
+		SELECT count(id)
+		FROM sales_chances
+		<include refid="queryConditionForDesignee"/>
+	</select>
+	
+	<sql id="queryConditionForDesignee">
+		WHERE status != 1 AND DESIGNEE_ID = #{designee.id}
+		<if test="custName != null">
+			and cust_name like #{custName}
+		</if>
+		<if test="title != null">
+			and TITLE like #{title}
+		</if>
+		<if test="contact != null">
+			and CONTACT like #{contact}
+		</if>
+	</sql>
+	
+	<select id="getTotalRecordNoForCondition" resultType="long">
+		select count(id) from sales_chances
+		<include refid="queryCondition"/>
+	</select>
+	<sql id="queryCondition">
+		where status=1 and created_user_id=#{createBy.id}
+		<if test="custName != null">
+			and cust_name like #{custName}
+		</if>
+		<if test="title != null">
+			and TITLE like #{title}
+		</if>
+		<if test="contact != null">
+			and CONTACT like #{contact}
+		</if>
+	</sql>
+	
+	<update id="updateStatus">
+		update sales_chances set status=#{status} where id=#{id}
+	</update>
+	<resultMap type="SalesChance" id="chanceMap">
+		<id column="id" property="id"/>
+		<result column="source" property="source"/>
+		<result column="cust_name" property="custName"/>
+		
+		<result column="rate" property="rate"/>
+		<result column="title" property="title"/>
+		<result column="contact" property="contact"/>
+		
+		<result column="contact_tel" property="contactTel"/>
+		<result column="description" property="description"/>
+		<result column="create_date" property="createDate"/>
+		
+		<result column="createBy.name" property="createBy.name"/>
+		
+		<result column="designee.name" property="designee.name"/>
+		
+		<collection property="salesPlans" ofType="SalesPlan">
+			<id column="p_id" property="id"/>
+			<result column="todo" property="todo"/>
+			<result column="plan_result" property="result"/>
+			<result column="plan_date" property="date"/>
+		</collection>
+	</resultMap>
+	
+	<select id="getWithPlans" resultMap="chanceMap">
+		SELECT 
+		s.id, source, cust_name, rate, title,contact, contact_tel, description, create_date, 
+		c.name AS "createBy.name", 
+		d.name AS "designee.name",
+		p.id AS "p_id", todo, plan_result, plan_date 
+		FROM sales_chances s
+		LEFT OUTER JOIN users c
+		ON s.created_user_id = c.id
+		LEFT OUTER JOIN users d
+		ON s.designee_id = d.id
+		LEFT OUTER JOIN sales_plan p
+		ON p.chance_id = s.id
+		WHERE s.id = #{id}
+		order by s.id
+	</select>
+	
+	
+	<select id="getPageListForDesignee" resultType="SalesChance">
+		select *
+		from(
+			select rownum rn,id,cust_name,title,contact,contact_tel,create_date,status
+			from sales_chances
+			<include refid="queryConditionForDesignee"/>
+			order by id
+		)
+		<![CDATA[
+			where rn >= #{firstIndex} and rn < #{endIndex}
+		]]>
+	</select>
+	<select id="getTotalRecordNoForDesignee" resultType="long">
+		SELECT count(id)
+		FROM sales_chances
+		WHERE status > 1 AND DESIGNEE_ID = #{designee.id}
+	</select>
+	<update id="updateDispatch">
+		update sales_chances set 
+		status=2,DESIGNEE_ID=#{designeeId},DESIGNEE_DATE=#{designeeDate}
+		where id= #{id}
+	</update>
+	
+	<update id="update">
+		update sales_chances set 
+		cust_name=#{custName},title=#{title},contact=#{contact},description=#{description},
+		source=#{source},rate=#{rate},contact_tel=#{contactTel}
+		where id= #{id}
+	</update>
+	
+	
+	<select id="get" resultType="SalesChance">
+		SELECT s.id,cust_name,title,contact,s.description,source,rate,contact_tel,create_date,u.name AS "createBy.name", r.name AS "createBy.role.name"
+		FROM sales_chances s
+		LEFT OUTER JOIN users u
+		ON s.created_user_id = u.id
+		LEFT OUTER JOIN roles r
+		ON u.role_id = r.id
+		WHERE s.id = #{id}
+	</select>	
+	
+	
+	<delete id="delete">
+		delete from sales_chances where id=#{id}
+	</delete>
+	
+	
+	<insert id="save">
+		INSERT INTO sales_chances(id,cust_name,title,contact,description,created_user_id,source,rate,contact_tel,create_date,status)
+		VALUES(crm_seq.nextval,#{custName},#{title},#{contact},#{description},#{createBy.id},#{source},#{rate},#{contactTel},#{createDate},1)
+	</insert>
+	
+	
+	<select id="getPageList" resultType="SalesChance">
+	<!-- 编号  客户名称  概要  联系人  联系人电话  创建时间   -->
+		select *
+		from(
+			select rownum rn,id,cust_name,title,contact,contact_tel,create_date
+			from sales_chances
+			<include refid="queryCondition"/>
+			order by id
+		)
+		<![CDATA[
+			where rn >= #{firstIndex} and rn < #{endIndex}
+		]]>
+	</select>
+	
+	
+	<select id="getTotalRecordNo" resultType="long">
+		SELECT count(id)
+		FROM sales_chances
+		WHERE status = 1 AND created_user_id = #{createBy.id}
+	</select>
+</mapper>

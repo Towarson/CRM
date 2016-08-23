@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.atguigu.crm.mappers.ContactMapper">
+
+	<select id="getTotalRecordNo" resultType="int">
+		select count(c.id) from contacts c left outer join customers s
+		on c.CUSTOMER_ID=s.id
+		where c.CUSTOMER_ID=#{id}
+	</select>
+	<select id="getPageList" resultType="Contact">
+		select *
+		from(
+			select rownum rn,id,name,SEX,POSITION,TEL,MOBILE,MEMO 
+			from contacts where CUSTOMER_ID=#{id}
+			order by id
+			)
+		<![CDATA[
+			where rn >= #{firstIndex} and rn < #{endIndex}
+		]]>
+	</select>
+	<insert id="save">
+		insert into contacts (id,name,SEX,POSITION,TEL,MOBILE,MEMO,CUSTOMER_ID) 
+		values(crm_seq.nextval,#{name},#{sex},#{position},#{tel},#{mobile},#{memo},#{customer.id})
+	</insert>
+	<update id="update">
+		update contacts set NAME=#{name},SEX=#{sex},POSITION=#{position},
+		TEL=#{tel},MOBILE=#{mobile},MEMO=#{memo}
+		where id=#{id} 
+	</update>
+	<select id="get" resultType="Contact">
+		select id,name,SEX,POSITION,TEL,MOBILE,MEMO 
+		from contacts where id=#{id}
+	</select>
+	<delete id="delete">
+		delete from contacts where id=#{id}
+	</delete>
+	<insert id="saveContact">
+		insert into contacts (id,name,tel,CUSTOMER_ID) 
+		values (crm_seq.nextval,#{name},#{tel},#{customer.id})
+	</insert>
+</mapper>

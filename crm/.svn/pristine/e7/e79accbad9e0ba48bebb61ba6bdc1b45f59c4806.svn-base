@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.0.xsd">
+		
+    <bean id="cacheManager" class="org.apache.shiro.cache.ehcache.EhCacheManager">
+        <property name="cacheManagerConfigFile" value="classpath:ehcache.xml"/> 
+    </bean>    
+    
+    <!-- 配置 Realm --> 
+    <bean id="realm" class="com.atguigu.crm.shiro.CrmShiroRealm">
+    	<property name="userService" ref="userService"></property>
+    	<property name="credentialsMatcher">
+    		<bean class="org.apache.shiro.authc.credential.HashedCredentialsMatcher">
+    			<property name="hashAlgorithmName" value="MD5"></property>
+    			<property name="hashIterations" value="1024"></property>
+    		</bean>
+    	</property>
+    </bean>     
+         
+    <bean id="securityManager" class="org.apache.shiro.web.mgt.DefaultWebSecurityManager">
+        <property name="cacheManager" ref="cacheManager"/>
+        <property name="realm" ref="realm"/>
+    </bean>
+
+    <bean id="lifecycleBeanPostProcessor" class="org.apache.shiro.spring.LifecycleBeanPostProcessor"/>
+
+    <bean id="shiroFilter" class="org.apache.shiro.spring.web.ShiroFilterFactoryBean">
+        <property name="securityManager" ref="securityManager"/>
+        <property name="loginUrl" value="/index.jsp"/>
+        <property name="unauthorizedUrl" value="/unauthorized"/>
+        <property name="filterChainDefinitions">
+            <value>
+                /index.jsp = anon
+                /user/login = anon
+                /user/navigate = anon
+                
+                /static/** = anon
+                /logout = logout
+                /chance/** = roles[chance]
+                /plan/** = roles[plan]
+                /customer/** = roles[customer]
+                /drain/** = roles[drain]
+                
+                /service/create/** = roles[service-create]
+                /service/list/** = roles[service-allot]
+                /service/deal/** = roles[service-deal]
+                /service/feedback/** = roles[service-feedback]
+                /service/archive/** = roles[service-archive]
+                   
+                /report/contribute/** = roles[report-pay]
+                /report/constitute/** = roles[report-consist]
+                /report/service/** = roles[report-service]
+                /report/drain/** = roles[report-drain]
+                
+                /dicts/** = roles[dict]
+                /product/** = roles[product]
+                /storage/** = roles[storage]
+                /user/** = roles[user]
+                /role/** = roles[role]
+                
+                /** = authc
+            </value>
+        </property>
+    </bean>
+</beans>

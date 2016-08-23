@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.atguigu.crm.mappers.CustomerMapper">
+	<update id="update">
+		update customers set NO=#{no},NAME=#{name},REGION=#{region},MANAGER_ID=#{manager.id},CUSTOMER_LEVEL=#{level},STATE=#{state},
+		SATIFY=#{satify},CREDIT=#{credit},ADDRESS=#{address},ZIP=#{zip},TEL=#{tel},FAX=#{fax},WEBSIT=#{websit},LICENCE_NO=#{licenceNo},CHIEF=#{chief},
+		BANKROLL=#{bankroll},TURNOVER=#{turnover},BANK=#{bank},BANK_ACCOUNT=#{bankAccount},LOCAL_TAX_NO=#{localTaxNo},NATIONAL_TAX_NO=#{nationalTaxNo}
+		where id=#{id}
+	</update>
+
+	<resultMap type="Customer" id="custResultMap">
+		<id column="id" property="id"/>
+		<result column="NO" property="no"/>
+		<result column="NAME" property="name"/>
+		<result column="REGION" property="region"/>
+		<result column="CUSTOMER_LEVEL" property="level"/>
+		<result column="STATE" property="state"/>
+		<result column="SATIFY" property="satify"/>
+		<result column="CREDIT" property="credit"/>
+		<result column="ADDRESS" property="address"/>
+		<result column="ZIP" property="zip"/>
+		<result column="TEL" property="tel"/>
+		<result column="FAX" property="fax"/>
+		<result column="WEBSIT" property="websit"/>
+		<result column="LICENCE_NO" property="licenceNo"/>
+		<result column="CHIEF" property="chief"/>
+		<result column="BANKROLL" property="bankroll"/>
+		<result column="TURNOVER" property="turnover"/>
+		<result column="BANK" property="bank"/>
+		<result column="BANK_ACCOUNT" property="bankAccount"/>
+		<result column="LOCAL_TAX_NO" property="localTaxNo"/>
+		<result column="NATIONAL_TAX_NO" property="nationalTaxNo"/>
+		<result column="MANAGER_ID" property="manager.id"/>
+		<collection property="contacts" 
+					column="id" 
+					select="com.atguigu.crm.mappers.CustomerMapper.getMyManager">
+		</collection>		
+	</resultMap>
+	<select id="getWithDictsAndContacts" resultMap="custResultMap">
+		select s.id,s.NO,s.NAME,s.REGION,s.MANAGER_ID,s.CUSTOMER_LEVEL,s.STATE,
+		s.SATIFY,s.CREDIT,s.ADDRESS,s.ZIP,s.TEL,s.FAX,s.WEBSIT,s.LICENCE_NO,s.CHIEF,
+		s.BANKROLL,s.TURNOVER,s.BANK,s.BANK_ACCOUNT,s.LOCAL_TAX_NO,s.NATIONAL_TAX_NO
+		from customers s
+		where s.id=#{id}
+	</select>
+	<select id="getMyManager" resultType="Contact">
+		select id,name from contacts where CUSTOMER_ID=#{id}
+	</select>
+	<select id="getAllLevel" resultType="String">
+		select item from dicts where type='客户等级'
+	</select>
+	<select id="getAllRegion" resultType="String">
+		select item from dicts where type='地区'
+	</select>
+	<select id="getAllSatify" resultType="String">
+		select item from dicts where type='满意度'
+	</select>
+	<select id="getAllCredit" resultType="String">
+		select item from dicts where type='信用度'
+	</select>
+	<select id="getAllState" resultType="String">
+		select DISTINCT STATE from customers
+	</select>
+	<select id="getTotalRecordNo" resultType="long">
+		select count(s.id) from customers s
+		left outer join contacts c on s.MANAGER_ID=c.id
+		<include refid="queryCondition"/>
+	</select>
+	<select id="getPageList" resultType="Customer">
+		select *
+		from(
+			select rownum rn,s.ID,s.no,s.name,s.region,c.name AS "manager.name",s.CUSTOMER_LEVEL AS "level",s.STATE
+			from customers s
+			left outer join contacts c on s.MANAGER_ID=c.id
+			<include refid="queryCondition"/>
+			order by s.id
+		)
+		<![CDATA[
+			where rn >= #{firstIndex} and rn < #{endIndex}
+		]]>
+	</select>
+	<sql id="queryCondition">
+			where 1=1
+		<if test="name != null">
+			and s.name like #{name}
+		</if>
+		<if test="managerName != null">
+			and c.name like #{managerName}
+		</if>
+		<if test="region != null">
+			and region = #{region}
+		</if>
+		<if test="level != null">
+			and CUSTOMER_LEVEL = #{level}
+		</if>
+		<if test="state != null">
+			and state = #{state}
+		</if>
+		
+	</sql>
+	<select id="get" resultType="Customer">
+		select id,no,name from customers where id=#{id}
+	</select>
+	<insert id="saveCustomer">
+		<selectKey order="BEFORE" keyProperty="id" resultType="long">
+			SELECT crm_seq.nextval
+			FROM dual
+		</selectKey>
+		INSERT INTO customers (id,name,no,state) values (#{id},#{name},#{no},#{state})
+	</insert>
+</mapper>
